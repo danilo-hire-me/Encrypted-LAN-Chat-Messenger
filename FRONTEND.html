@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Application</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000000; /* Set background to black */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white; /* Set default text color to white */
+        }
+    
+        .chat-container {
+            background-color: #1c1c1c; /* Dark gray for chat container */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            width: 400px;
+            max-width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+    
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #2b2b2b; /* Slightly lighter gray for messages area */
+            border-radius: 5px;
+        }
+    
+        #messages p {
+            margin: 5px 0;
+            padding: 8px;
+            background-color: #444444; /* Medium gray for individual messages */
+            border-radius: 5px;
+            color: white; /* Text color inside messages */
+        }
+    
+        .input-group {
+            display: flex;
+            margin-bottom: 10px;
+        }
+    
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 14px;
+            background-color: #2b2b2b; /* Match background with message area */
+            color: white; /* Text color inside input fields */
+        }
+    
+        .input-group input::placeholder {
+            color: #aaa; /* Lighter color for placeholders */
+        }
+    
+        .input-group input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+    
+        #sendBtn {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+    
+        #sendBtn:hover {
+            background-color: #0056b3;
+        }
+    </style>    
+</head>
+<body>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var socket = io.connect("http://192.168.1.12:5000");
+            var secretKey = "my_secret_key";  // Use a secure key
+    
+            // Encrypt message
+            function encryptMessage(message) {
+                return CryptoJS.AES.encrypt(message, secretKey).toString();
+            }
+    
+            // Decrypt message
+            function decryptMessage(ciphertext) {
+                var bytes = CryptoJS.AES.decrypt(ciphertext, secretKey);
+                return bytes.toString(CryptoJS.enc.Utf8);
+            }
+    
+            socket.on('connect', function() {
+                var encryptedMessage = encryptMessage("User connected!");
+                socket.send(encryptedMessage);
+            });
+    
+            socket.on('message', function(data) {
+                var decryptedMessage = decryptMessage(data);
+                $('#messages').append($('<p>').text(decryptedMessage));
+            });
+    
+            $('#sendBtn').on('click', function() {
+                var message = $('#username').val() + ': ' + $('#message').val();
+                var encryptedMessage = encryptMessage(message);
+                socket.send(encryptedMessage);
+                $('#message').val('');
+            });
+        });
+    </script>
+
+    <div class="chat-container">
+        <div id="messages"></div>
+        <div class="input-group">
+            <input type="text" id="username" placeholder="Username">
+        </div>
+        <div class="input-group">
+            <input type="text" id="message" placeholder="Message">
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
+</body>
+</html>
